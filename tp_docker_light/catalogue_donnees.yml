@@ -1,0 +1,243 @@
+# ===================================================================
+# CATALOGUE DE DONNÉES VÉLOCITY (Backup)
+# ===================================================================
+#
+# Ce fichier sert de documentation de secours si OpenMetadata
+# n'est pas disponible. Il liste les assets de données connus.
+#
+# Les tables de production sont réparties dans les domaines
+# métier qui les gèrent.
+# ===================================================================
+
+domains:
+  # -----------------------------------------------------------------
+  # DOMAINE 1: Archives
+  # -----------------------------------------------------------------
+  - name: "Archives"
+    description: "Tables obsolètes ou remplacées."
+    sub_domains:
+      - name: "Deprecated Assets"
+        description: "Données conservées pour raisons légales mais non maintenues."
+        tables:
+          - name: "rentals_archive_2022"
+            description: "Archive des trajets 2022."
+            columns: [ "rental_id", "bike_id", "user_id", "start_t", "end_t" ]
+          - name: "user_accounts_deprecated"
+            description: "Ancienne table utilisateurs."
+            columns: [ "user_id", "email", "birthdate", "registration_date" ]
+          - name: "daily_activity_summary_OLD"
+            description: "Table d'un ancien dashboard."
+            columns: [ "summary_date", "total_rentals", "total_revenue_eur" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 2: Finance
+  # -----------------------------------------------------------------
+  - name: "Finance"
+    description: "Données relatives à la facturation, aux paiements et à la comptabilité."
+    sub_domains:
+      - name: "Billing"
+        description: "Données de facturation client."
+        tables:
+          - name: "subscriptions"
+            description: "Table de dimension (référentiel) des types d'abonnements."
+            columns:
+              - name: "subscription_id"
+                description: "Identifiant de l'abonnement (Clé primaire)."
+              - name: "subscription_type"
+                description: "Nom de l'abonnement (ex: Mensuel, Annuel)."
+              - name: "price_eur"
+                description: "Prix de l'abonnement en euros."
+          - name: "billing_invoices"
+            description: "Factures mensuelles (données brutes)."
+            columns: [ "invoice_id", "user_id", "subscription_id", "issue_date", "amount_eur", "status" ]
+          - name: "rental_transactions"
+            description: "Logs de paiement Stripe."
+            columns: [ "transaction_id", "rental_id", "payment_provider", "processed_at", "status" ]
+      - name: "Procurement"
+        description: "Comptabilité fournisseurs."
+        tables:
+          - name: "supplier_invoices"
+            description: "Factures des fournisseurs (pièces, etc.)."
+            columns: [ "supplier_invoice_id", "supplier_name", "item_description", "total_eur" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 3: Ressources Humaines
+  # -----------------------------------------------------------------
+  - name: "Ressources Humaines"
+    description: "Données internes sur les employés."
+    sub_domains:
+      - name: "Payroll & Staff"
+        description: "Informations sur le personnel."
+        tables:
+          - name: "employees"
+            description: "Liste des employés VéloCity."
+            columns: [ "employee_id", "first_name", "last_name", "job_title", "office_city_id" ]
+          - name: "employee_payrolls"
+            description: "Logs de paie."
+            columns: [ "payroll_id", "employee_id", "pay_date", "monthly_salary_eur" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 4: IT Operations
+  # -----------------------------------------------------------------
+  - name: "IT Operations"
+    description: "Données techniques, logs et inventaire matériel."
+    sub_domains:
+      - name: "Infra & Logs"
+        description: "Logs bruts des systèmes."
+        tables:
+          - name: "user_session_logs"
+            description: "Logs de connexion bruts de l'app mobile. Volume élevé."
+            columns: [ "session_id", "user_id", "login_time", "duration_seconds", "device_type" ]
+          - name: "api_request_logs"
+            description: "Logs bruts du backend API."
+            columns: [ "request_id", "endpoint", "response_code", "request_time" ]
+          - name: "station_hardware_inventory"
+            description: "Inventaire matériel des bornes de paiement."
+            columns: [ "hardware_id", "station_id", "terminal_model", "install_date" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 5: Logistics & Maintenance
+  # -----------------------------------------------------------------
+  - name: "Logistics & Maintenance"
+    description: "Données opérationnelles sur la maintenance et la flotte de véhicules."
+    sub_domains:
+      - name: "Maintenance"
+        description: "Opérations de réparation."
+        tables:
+          - name: "station_maintenance_schedule"
+            description: "Planning des techniciens pour l'entretien des stations."
+            columns: [ "maintenance_id", "station_id", "planned_date", "technician_name", "status" ]
+          - name: "bike_maintenance_logs"
+            description: "Historique des réparations sur les vélos."
+            columns: [ "log_id", "bike_id", "report_date", "issue_description", "cost_eur" ]
+      - name: "Fleet & Infrastructure"
+        description: "Gestion de la flotte de véhicules et des stations."
+        tables:
+          - name: "bike_stations"
+            description: "Table de dimension (référentiel) des stations VéloCity."
+            columns:
+              - name: "station_id"
+                description: "Identifiant unique de la station (Clé primaire)."
+              - name: "station_name"
+                description: "Nom public de la station."
+              - name: "latitude"
+                description: "Latitude."
+              - name: "longitude"
+                description: "Longitude."
+              - name: "capacity"
+                description: "Capacité totale de la station."
+              - name: "city_id"
+                description: "Clé étrangère vers la table cities."
+          - name: "logistics_fleet_vehicles"
+            description: "Liste des camions et camionnettes de maintenance."
+            columns: [ "vehicle_id", "vehicle_type", "license_plate", "current_city_id" ]
+          - name: "vehicle_gps_tracking"
+            description: "Logs GPS bruts des véhicules de maintenance."
+            columns: [ "ping_id", "vehicle_id", "ping_time", "latitude", "longitude" ]
+      - name: "Inventory"
+        description: "Stock de pièces détachées et inventaire des vélos."
+        tables:
+          - name: "bikes"
+            description: "Table de dimension (inventaire) de la flotte de vélos."
+            columns:
+              - name: "bike_id"
+                description: "Identifiant unique du vélo (Clé primaire)."
+              - name: "bike_type"
+                description: "Type de vélo (ex: mecanique, electrique)."
+              - name: "model_name"
+                description: "Modèle commercial du vélo."
+              - name: "commissioning_date"
+                description: "Date de mise en service."
+              - name: "status"
+                description: "Statut actuel (ex: active, in_maintenance, retired)."
+          - name: "bike_part_orders"
+            description: "Commandes de pièces (pneus, freins, etc.)."
+            columns: [ "order_id", "part_sku", "quantity", "order_date", "supplier_name" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 6: Marketing
+  # -----------------------------------------------------------------
+  - name: "Marketing"
+    description: "Données relatives aux campagnes, emails et acquisition."
+    sub_domains:
+      - name: "Campaigns"
+        description: "Gestion des campagnes promotionnelles."
+        tables:
+          - name: "marketing_campaigns"
+            description: "Planning des campagnes email et promotions."
+            columns: [ "campaign_id", "campaign_name", "start_date", "end_date", "budget_eur" ]
+          - name: "email_sends_log"
+            description: "Logs d'envoi bruts (Sendgrid)."
+            columns: [ "email_log_id", "user_id", "campaign_id", "sent_at", "status" ]
+      - name: "Market Data"
+        description: "Données de référence sur les marchés."
+        tables:
+          - name: "cities"
+            description: "Table de dimension (référentiel) des villes où le service est opéré."
+            columns:
+              - name: "city_id"
+                description: "Identifiant unique de la ville (Clé primaire)."
+              - name: "city_name"
+                description: "Nom de la ville (ex: Paris, Lyon)."
+              - name: "region"
+                description: "Région administrative."
+
+  # -----------------------------------------------------------------
+  # DOMAINE 7: Support
+  # -----------------------------------------------------------------
+  - name: "Support"
+    description: "Données du service client."
+    sub_domains:
+      - name: "Customer Service"
+        description: "Données du support client."
+        tables:
+          - name: "user_accounts"
+            description: "Table de dimension des utilisateurs (clients)."
+            columns:
+              - name: "user_id"
+                description: "Identifiant unique de l'utilisateur (Clé primaire)."
+              - name: "first_name"
+                description: "Prénom."
+              - name: "last_name"
+                description: "Nom de famille."
+              - name: "email"
+                description: "Email de l'utilisateur."
+              - name: "birthdate"
+                description: "Date de naissance."
+              - name: "registration_date"
+                description: "Date d'inscription."
+              - name: "subscription_id"
+                description: "Clé étrangère vers la table subscriptions."
+          - name: "bike_rentals"
+            description: "Table de faits enregistrant tous les trajets. Gérée par le support pour analyse des incidents."
+            columns:
+              - name: "rental_id"
+                description: "Identifiant unique du trajet (Clé primaire)."
+              - name: "bike_id"
+                description: "Clé étrangère vers la table bikes."
+              - name: "user_id"
+                description: "Clé étrangère vers la table user_accounts."
+              - name: "start_station_id"
+                description: "Clé étrangère (station) de départ."
+              - name: "end_station_id"
+                description: "Clé étrangère (station) d'arrivée."
+              - name: "start_t"
+                description: "Horodatage de début."
+              - name: "end_t"
+                description: "Horodatage de fin."
+          - name: "customer_support_tickets"
+            description: "Export des tickets Zendesk."
+            columns: [ "ticket_id", "user_id", "created_at", "subject", "status" ]
+
+  # -----------------------------------------------------------------
+  # DOMAINE 8: External Data
+  # -----------------------------------------------------------------
+  - name: "External Data"
+    description: "Données achetées ou provenant de sources tierces."
+    sub_domains:
+      - name: "Third Party"
+        description: "Données partenaires."
+        tables:
+          - name: "weather_forecast_hourly"
+            description: "Prévisions météo (API externe)."
+            columns: [ "forecast_id", "city_id", "forecast_time", "temperature_celsius", "precipitation_mm" ]

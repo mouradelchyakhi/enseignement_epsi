@@ -1,0 +1,97 @@
+services:
+  # -------------------------------------------------------
+  # 1. POSTGRESQL
+  # -------------------------------------------------------
+  postgres:
+    image: postgres:18
+    container_name: epsi_postgres_container
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    volumes:
+      - epsi_pg_postgres_data:/var/lib/postgresql
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - unified_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------
+  # 2. PGADMIN
+  # -------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: epsi_pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-pgadmin}
+    volumes:
+      # 1. Le volume pour les données/configs de pgadmin
+      - epsi_pg_pgadmin_data:/var/lib/pgadmin
+      
+      # 2. NOUVELLE LIGNE : Le fichier de configuration des serveurs
+      #    Ceci monte votre fichier local dans le conteneur
+      - ./servers.json:/pgadmin4/servers.json
+      
+    networks:
+      - unified_network
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # -------------------------------------------------------
+  # 3. METABASE + SA BASE INTERNE
+  # -------------------------------------------------------
+  metabase_db:
+    image: postgres:13-alpine
+    container_name: metabase_internal_db
+    environment:
+      POSTGRES_DB: metabaseappdb
+      POSTGRES_USER: metabaseuser
+      POSTGRES_PASSWORD: metabasepassword
+    volumes:
+      - epsi_metabase_db_data:/var/lib/postgresql/data
+    networks:
+      - unified_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabaseuser -d metabaseappdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase_app
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabaseappdb
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabaseuser
+      MB_DB_PASS: metabasepassword
+      MB_DB_HOST: metabase_db
+    ports:
+      - "3000:3000"
+    networks:
+      - unified_network
+    depends_on:
+      metabase_db:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+networks:
+  unified_network:
+    driver: bridge
+
+volumes:
+  epsi_pg_postgres_data: {}
+  epsi_pg_pgadmin_data: {}
+  epsi_metabase_db_data: {}
