@@ -1,0 +1,7 @@
+user_id,username,age,email,signup_date
+1,jdoe,25,jdoe@example.com,2023-10-01
+2,asmith,17,alice.smith@domain.co,2023-10-02
+3,bwayne,-5,batman@gotham,2023-10-03
+4,,30,no_email_user,2023-10-04
+5,ckent,40,clark@daiLYplanet.com,2023-10-04
+1,duplicate_jdoe,25,Fake@email.com,2023-10-05
